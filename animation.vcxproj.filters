@@ -16,6 +16,12 @@
     <Filter Include="Resource Files\Shaders">
       <UniqueIdentifier>{46850bbf-6187-467a-bb2e-68c620c35241}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\Textures">
+      <UniqueIdentifier>{e8f1a3ab-7d5d-41ab-b4d8-62acb4e41813}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Light">
+      <UniqueIdentifier>{20b77af7-c709-46b1-9bcf-9d9db10e999c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\default.vert">
@@ -23,6 +29,12 @@
     </None>
     <None Include="src\default.frag">
       <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="src\light.frag">
+      <Filter>Resource Files\Light</Filter>
+    </None>
+    <None Include="src\light.vert">
+      <Filter>Resource Files\Light</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -44,6 +56,15 @@
     <ClCompile Include="src\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\stb.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VAO.h">
@@ -58,5 +79,16 @@
     <ClInclude Include="src\shaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="textures\brick.png">
+      <Filter>Resource Files\Textures</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -1,5 +1,4 @@
 #include"shaderClass.h"
-#include <stdexcept> // Add this include at the top if not already present
 
 // Reads a text file and outputs a string with everything in the text file
 std::string get_file_contents(const char* filename)
@@ -15,11 +14,8 @@ std::string get_file_contents(const char* filename)
 		in.close();
 		return(contents);
 	}
-	throw std::runtime_error(std::string("Failed to open file: ") + filename);
+	throw(errno);
 }
-
-
-Shader::Shader() {}
 
 // Constructor that build the Shader Program from 2 different shaders
 Shader::Shader(const char* vertexFile, const char* fragmentFile)
