@@ -23,6 +23,8 @@ uniform vec4 lightColor;
 uniform vec3 lightPos;
 // Gets the position of the camera from the main function
 uniform vec3 camPos;
+// Gets the direction of the spotlight from the main function
+uniform vec3 spotDirection;
 
 
 vec4 pointLight()
@@ -96,7 +98,7 @@ vec4 spotLight()
 	float specular = specAmount * specularLight;
 
 	// calculates the intensity of the crntPos based on its angle to the center of the light cone
-	float angle = dot(vec3(0.0f, -1.0f, 0.0f), -lightDirection);
+	float angle = dot(normalize(spotDirection), -lightDirection);
 	float inten = clamp((angle - outerCone) / (innerCone - outerCone), 0.0f, 1.0f);
 
 	return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * lightColor;
@@ -106,5 +108,5 @@ vec4 spotLight()
 void main()
 {
 	// outputs final color
-	FragColor = pointLight();
+	FragColor = spotLight();
 }
