@@ -79,7 +79,7 @@ vec4 direcLight()
 vec4 spotLight()
 {
 	// controls how big the area that is lit up is
-	float outerCone = 0.90f;
+	float outerCone = 0.94f;
 	float innerCone = 0.95f;
 
 	// ambient lighting

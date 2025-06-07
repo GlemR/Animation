@@ -14,6 +14,7 @@
 #include"Camera.h"
 #include"Mesh.h"
 #include"ModelLoader.h"
+#include"AABB.h"
 
 
 
@@ -118,6 +119,13 @@ int main()
 		// Continue without the model
 	}
 
+	std::vector<AABB> sceneAABBs;
+	if (schoolModel != nullptr) {
+		for (const auto& mesh : schoolModel->meshes) {
+			sceneAABBs.push_back(mesh.boundingBox);
+		}
+	}
+
 
 
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -140,8 +148,15 @@ int main()
 	// School model transformation (you might want to scale or position it differently)
 	glm::mat4 schoolModelMatrix = glm::mat4(1.0f);
 	schoolModelMatrix = glm::translate(schoolModelMatrix, glm::vec3(0.0f, 1.0f, 0.0f)); // Raise it above the floor
-	//schoolModelMatrix = glm::scale(schoolModelMatrix, glm::vec3(0.1f, 0.1f, 0.1f)); // Scale down if needed
-
+	glm::vec3 scaleVec(2.0f, 2.0f, 2.0f);
+	schoolModelMatrix = glm::scale(schoolModelMatrix, scaleVec);
+	if (schoolModel != nullptr) {
+		for (auto& mesh : schoolModel->meshes) {
+			mesh.boundingBox.min *= scaleVec;
+			mesh.boundingBox.max *= scaleVec;
+			mesh.position = 0.5f * (mesh.boundingBox.min + mesh.boundingBox.max);
+		}
+	}
 
 
 
@@ -159,7 +174,7 @@ int main()
 	glFrontFace(GL_CCW);
 
 	// Creates camera object
-	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 10.0f));
+	Camera camera(width, height, glm::vec3(2.8f, 2.8f, -3.44f));
 
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
@@ -171,11 +186,11 @@ int main()
 
 
 
-
+		std::cout << camera.colis << std::endl;
 		// Handles camera inputs
-		camera.Inputs(window);
+		camera.Inputs(window, schoolModel->meshes);
 		// Updates and exports the camera matrix to the Vertex Shader
-		camera.updateMatrix(45.0f, 1.0f, 50.0f);
+		camera.updateMatrix(60.0f, 1.0f, 50.0f);
 
 		// --- Add these lines to update the spotlight position and direction ---
 		shaderProgram.Activate();

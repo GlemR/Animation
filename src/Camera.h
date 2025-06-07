@@ -10,6 +10,8 @@
 #include<glm/gtx/vector_angle.hpp>
 
 #include"shaderClass.h"
+#include"Mesh.h"
+#include"AABB.h"
 
 class Camera
 {
@@ -22,7 +24,7 @@ public:
 
 	// Prevents the camera from jumping around when first clicking left click
 	bool firstClick = true;
-
+	int colis = -1;
 	// Stores the width and height of the window
 	int width;
 	int height;
@@ -39,6 +41,6 @@ public:
 	// Exports the camera matrix to a shader
 	void Matrix(Shader& shader, const char* uniform);
 	// Handles camera inputs
-	void Inputs(GLFWwindow* window);
+	void Inputs(GLFWwindow* window, const std::vector<Mesh>& meshes);
 };
 #endif

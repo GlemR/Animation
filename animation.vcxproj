@@ -21,6 +21,8 @@
   <ItemGroup>
     <None Include="model.frag" />
     <None Include="model.vert" />
+    <None Include="models\MapSchool.fbx" />
+    <None Include="models\SecondSchool.fbx" />
     <None Include="src\default.frag" />
     <None Include="src\default.vert" />
     <None Include="src\light.frag" />
@@ -41,6 +43,7 @@
     <ClCompile Include="src\VBO.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AABB.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\EBO.h" />
     <ClInclude Include="src\Mesh.h" />

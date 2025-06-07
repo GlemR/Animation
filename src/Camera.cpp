@@ -1,4 +1,6 @@
 #include"Camera.h"
+#include <algorithm>
+#include <cmath>
 
 
 
@@ -30,34 +32,46 @@ void Camera::Matrix(Shader& shader, const char* uniform)
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
+bool isInsideAABB(const glm::vec3& pos, const Mesh& mesh, float radius = 0.1f) {
+	glm::vec3 min = mesh.boundingBox.min; // If mesh.position is the center, adjust as needed
+	glm::vec3 max = mesh.boundingBox.max;
+	return (pos.x + radius > min.x && pos.x - radius < max.x &&
+		pos.y + radius > min.y && pos.y - radius < max.y &&
+		pos.z + radius > min.z && pos.z - radius < max.z);
+}
 
 
-void Camera::Inputs(GLFWwindow* window)
+void Camera::Inputs(GLFWwindow* window, const std::vector<Mesh>& meshes)
 {
 	// Handles key inputs
+	glm::vec3 nextPosition = Position;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
-		Position += speed * Orientation;
+		nextPosition += speed * Orientation;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		Position += speed * -glm::normalize(glm::cross(Orientation, Up));
+		nextPosition += speed * -glm::normalize(glm::cross(Orientation, Up));
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 	{
-		Position += speed * -Orientation;
+		nextPosition += speed * -Orientation;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		Position += speed * glm::normalize(glm::cross(Orientation, Up));
+		nextPosition += speed * glm::normalize(glm::cross(Orientation, Up));
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
 	{
-		Position += speed * Up;
+		nextPosition += speed * Up;
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 	{
-		Position += speed * -Up;
+		nextPosition += speed * -Up;
+	}
+	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+	{
+		colis=colis* (-1);
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 	{
@@ -68,6 +82,19 @@ void Camera::Inputs(GLFWwindow* window)
 		speed = 0.1f;
 	}
 
+	bool collision = false;
+	if (colis == 1) {
+
+		for (const auto& mesh : meshes) {
+			if (isInsideAABB(nextPosition, mesh)) {
+				collision = true;
+				break;
+			}
+		}
+	}
+	if (!collision) {
+		Position = nextPosition;
+	}
 
 	// Handles mouse inputs
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
