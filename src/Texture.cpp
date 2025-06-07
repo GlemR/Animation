@@ -43,6 +43,12 @@ Texture::Texture(const char* image, const char* texType, GLuint slot, GLenum for
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+// Default constructor implementation
+Texture::Texture() : ID(0), type(nullptr), unit(0)
+{
+	// Initialize with default values
+}
+
 void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
 {
 	// Gets the location of the uniform

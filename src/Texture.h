@@ -13,6 +13,9 @@ public:
 	const char* type;
 	GLuint unit;
 
+	// Default constructor
+	Texture();
+
 	Texture(const char* image, const char* texType, GLuint slot, GLenum format, GLenum pixelType);
 
 	// Assigns a texture unit to a texture

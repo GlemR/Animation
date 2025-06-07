@@ -7,12 +7,18 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <unordered_map>
+#include <filesystem>
+#include <algorithm>
+#include <cctype>
 #include "Mesh.h"
 #include "Texture.h"
 
 class Model {
 public:
     std::vector<Mesh> meshes;
+    std::string directory;
+    std::unordered_map<std::string, Texture> loadedTextures; // Cache for loaded textures
 
     Model(const std::string& path) {
         std::cout << "Loading model: " << path << std::endl;
@@ -28,6 +34,8 @@ public:
     Model& operator=(Model&&) = default;
 
     void Draw(Shader& shader, Camera& camera) {
+
+
         for (auto& mesh : meshes) {
             mesh.Draw(shader, camera);
         }
@@ -38,7 +46,6 @@ private:
         Assimp::Importer importer;
         const aiScene* scene = importer.ReadFile(path,
             aiProcess_Triangulate |
-            aiProcess_FlipUVs |
             aiProcess_GenSmoothNormals |
             aiProcess_CalcTangentSpace);
 
@@ -52,6 +59,14 @@ private:
             return;
         }
 
+        // Extract directory path from the model file path
+        std::filesystem::path modelPath(path);
+        directory = modelPath.parent_path().string();
+        if (!directory.empty() && directory.back() != '/' && directory.back() != '\\') {
+            directory += "/";
+        }
+
+        std::cout << "Model directory: " << directory << std::endl;
         std::cout << "Model has " << scene->mNumMeshes << " meshes" << std::endl;
 
         // Reserve space to avoid reallocations
@@ -63,13 +78,14 @@ private:
             std::cout << "Loading mesh " << meshIndex << ": " << aiMesh->mNumVertices
                 << " vertices, " << aiMesh->mNumFaces << " faces" << std::endl;
 
-            loadMesh(aiMesh);
+            loadMesh(aiMesh, scene);
         }
 
         std::cout << "Successfully loaded " << meshes.size() << " meshes" << std::endl;
+        std::cout << "Loaded " << loadedTextures.size() << " unique textures" << std::endl;
     }
 
-    void loadMesh(const aiMesh* aiMesh) {
+    void loadMesh(const aiMesh* aiMesh, const aiScene* scene) {
         if (!aiMesh || aiMesh->mNumVertices == 0) {
             std::cout << "  Warning: Invalid or empty mesh!" << std::endl;
             return;
@@ -77,7 +93,7 @@ private:
 
         std::vector<Vertex> vertices;
         std::vector<GLuint> indices;
-        std::vector<Texture> textures; // Empty for now, you can add texture loading later
+        std::vector<Texture> textures;
 
         // Reserve space for better performance
         vertices.reserve(aiMesh->mNumVertices);
@@ -146,11 +162,117 @@ private:
             return;
         }
 
+        // Load material textures
+        if (aiMesh->mMaterialIndex >= 0) {
+            aiMaterial* material = scene->mMaterials[aiMesh->mMaterialIndex];
+
+            // Load diffuse textures
+            std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse");
+            textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+
+            // Load specular textures
+            std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular");
+            textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+            // Load normal maps
+            std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal");
+            textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+
+            // Also try aiTextureType_NORMALS for normal maps
+            std::vector<Texture> normalMaps2 = loadMaterialTextures(material, aiTextureType_NORMALS, "normal");
+            textures.insert(textures.end(), normalMaps2.begin(), normalMaps2.end());
+
+            std::cout << "  Loaded " << textures.size() << " textures for this mesh" << std::endl;
+        }
+
         // Create the mesh using your existing Mesh class
         meshes.emplace_back(vertices, indices, textures);
 
         std::cout << "  Mesh loaded successfully: " << vertices.size() << " vertices, "
-            << indices.size() << " indices" << std::endl;
+            << indices.size() << " indices, " << textures.size() << " textures" << std::endl;
+    }
+
+    std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName) {
+        std::vector<Texture> textures;
+
+        unsigned int textureCount = mat->GetTextureCount(type);
+        std::cout << "    Found " << textureCount << " " << typeName << " textures" << std::endl;
+
+        for (unsigned int i = 0; i < textureCount; i++) {
+            aiString str;
+            mat->GetTexture(type, i, &str);
+
+            std::string texturePath = str.C_Str();
+            std::cout << "      Original texture path: " << texturePath << std::endl;
+
+            // Extract just the filename from the path (handles both absolute and relative paths)
+            std::string filename = std::filesystem::path(texturePath).filename().string();
+            std::cout << "      Extracted filename: " << filename << std::endl;
+
+            // Try multiple possible locations for the texture
+            std::vector<std::string> possiblePaths = {
+                "textures/MapSchool/" + filename,     // models/MapSchool/textures/texture.jpg  
+            };
+
+            std::string fullPath;
+            bool foundTexture = false;
+
+            // Check each possible path
+            for (const auto& path : possiblePaths) {
+                if (std::filesystem::exists(path)) {
+                    fullPath = path;
+                    foundTexture = true;
+                    std::cout << "      Found texture at: " << fullPath << std::endl;
+                    break;
+                }
+            }
+
+            if (!foundTexture) {
+                std::cerr << "      Warning: Could not find texture file: " << filename << std::endl;
+                std::cerr << "      Searched in:" << std::endl;
+                for (const auto& path : possiblePaths) {
+                    std::cerr << "        " << path << std::endl;
+                }
+                continue;
+            }
+
+            // Check if texture was already loaded
+            if (loadedTextures.find(fullPath) != loadedTextures.end()) {
+                std::cout << "      Using cached texture: " << fullPath << std::endl;
+                textures.push_back(loadedTextures[fullPath]);
+                continue;
+            }
+
+            // Try to load the texture
+            try {
+                std::cout << "      Loading new texture: " << fullPath << std::endl;
+
+                // Create texture object with appropriate format
+                GLenum format = GL_RGBA;
+                GLenum pixelType = GL_UNSIGNED_BYTE;
+
+                // Try to determine format from file extension
+                std::string extension = std::filesystem::path(fullPath).extension().string();
+                std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+
+                if (extension == ".jpg" || extension == ".jpeg") {
+                    format = GL_RGB;
+                }
+
+                Texture texture(fullPath.c_str(), typeName.c_str(), i, format, pixelType);
+                textures.push_back(texture);
+
+                // Cache the texture
+                loadedTextures[fullPath] = texture;
+
+                std::cout << "      Successfully loaded texture: " << fullPath << std::endl;
+            }
+            catch (const std::exception& e) {
+                std::cerr << "      Failed to load texture " << fullPath << ": " << e.what() << std::endl;
+            }
+        }
+
+        return textures;
     }
 };
 #endif

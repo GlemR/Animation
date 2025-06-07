@@ -27,8 +27,8 @@ Vertex vertices[] =
 { //               COORDINATES           /            COLORS          /           NORMALS         /       TEXTURE COORDINATES    //
 	Vertex{glm::vec3(-1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f)},
 	Vertex{glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 1.0f)},
-	Vertex{glm::vec3( 1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 1.0f)},
-	Vertex{glm::vec3( 1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 0.0f)}
+	Vertex{glm::vec3(1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 1.0f)},
+	Vertex{glm::vec3(1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 0.0f)}
 };
 
 // Indices for vertices order
@@ -94,42 +94,23 @@ int main()
 
 	// Load GLAD so it configures OpenGL
 	gladLoadGL();
+	// REQUEST A HIGHER PRECISION DEPTH BUFFER
+	glfwWindowHint(GLFW_DEPTH_BITS, 24);
 	// Specify the viewport of OpenGL in the Window
 	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
 	glViewport(0, 0, width, height);
 
 
 
-	// Original code from the tutorial
-	Texture textures[]
-	{
-		Texture("textures/planks.png", "diffuse", 0, GL_RGBA, GL_UNSIGNED_BYTE),
-		Texture("textures/planksSpec.png", "specular", 1, GL_RED, GL_UNSIGNED_BYTE)
-	};
 
 
 
 	// Generates Shader object using shaders default.vert and default.frag
 	Shader shaderProgram("src/default.vert", "src/default.frag");
-	// Store mesh data in vectors for the mesh
-	std::vector <Vertex> verts(vertices, vertices + sizeof(vertices) / sizeof(Vertex));
-	std::vector <GLuint> ind(indices, indices + sizeof(indices) / sizeof(GLuint));
-	std::vector <Texture> tex(textures, textures + sizeof(textures) / sizeof(Texture));
-	// Create floor mesh
-	Mesh floor(verts, ind, tex);
-
-
-	// Shader for light cube
-	Shader lightShader("src/light.vert", "src/light.frag");
-	// Store mesh data in vectors for the mesh
-	std::vector <Vertex> lightVerts(lightVertices, lightVertices + sizeof(lightVertices) / sizeof(Vertex));
-	std::vector <GLuint> lightInd(lightIndices, lightIndices + sizeof(lightIndices) / sizeof(GLuint));
-	// Create light mesh
-	Mesh light(lightVerts, lightInd, tex);
 
 	Model* schoolModel = nullptr;
 	try {
-		schoolModel = new Model("models/school.obj"); // Adjust path as needed
+		schoolModel = new Model("models/MapSchool.fbx"); // Adjust path as needed
 		std::cout << "School model loaded successfully!" << std::endl;
 	}
 	catch (const std::exception& e) {
@@ -144,32 +125,41 @@ int main()
 	glm::mat4 lightModel = glm::mat4(1.0f);
 	lightModel = glm::translate(lightModel, lightPos);
 
-	glm::vec3 objectPos = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::mat4 objectModel = glm::mat4(1.0f);
-	objectModel = glm::translate(objectModel, objectPos);
+
+	shaderProgram.Activate();
+	glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+	glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+
+	// Set up texture uniforms in the shader
+	// This tells the shader which texture units to use for each texture type
+	glUniform1i(glGetUniformLocation(shaderProgram.ID, "diffuse0"), 0);
+	glUniform1i(glGetUniformLocation(shaderProgram.ID, "specular0"), 1);
+	glUniform1i(glGetUniformLocation(shaderProgram.ID, "normal0"), 2);
+
 
 	// School model transformation (you might want to scale or position it differently)
 	glm::mat4 schoolModelMatrix = glm::mat4(1.0f);
 	schoolModelMatrix = glm::translate(schoolModelMatrix, glm::vec3(0.0f, 1.0f, 0.0f)); // Raise it above the floor
-	schoolModelMatrix = glm::scale(schoolModelMatrix, glm::vec3(0.1f, 0.1f, 0.1f)); // Scale down if needed
-
-	lightShader.Activate();
-	glUniformMatrix4fv(glGetUniformLocation(lightShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(lightModel));
-	glUniform4f(glGetUniformLocation(lightShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
-	shaderProgram.Activate();
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(objectModel));
-	glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
-	glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+	//schoolModelMatrix = glm::scale(schoolModelMatrix, glm::vec3(0.1f, 0.1f, 0.1f)); // Scale down if needed
 
 
 
-	
 
 	// Enables the Depth Buffer
 	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);        // Add this
+	glDepthMask(GL_TRUE);        // Add this
+
+	//POLYGON OFFSET TO REDUCE Z - FIGHTING
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(1.0f, 1.0f);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
 
 	// Creates camera object
-	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
+	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 10.0f));
 
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
@@ -180,15 +170,14 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
+
+
 		// Handles camera inputs
 		camera.Inputs(window);
 		// Updates and exports the camera matrix to the Vertex Shader
-		camera.updateMatrix(45.0f, 0.1f, 100.0f);
+		camera.updateMatrix(45.0f, 1.0f, 50.0f);
 
 
-		// Draws different meshes
-		floor.Draw(shaderProgram, camera);
-		light.Draw(lightShader, camera);
 
 		// Draw the school model if it loaded successfully
 		if (schoolModel != nullptr) {
@@ -210,7 +199,6 @@ int main()
 
 	// Delete all the objects we've created
 	shaderProgram.Delete();
-	lightShader.Delete();
 
 	// Delete the school model
 	if (schoolModel != nullptr) {
