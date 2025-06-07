@@ -40,14 +40,14 @@ GLuint indices[] =
 
 Vertex lightVertices[] =
 { //     COORDINATES     //
-	Vertex{glm::vec3(-3.1f, -3.1f,  3.1f)},
-	Vertex{glm::vec3(-3.1f, -3.1f, -3.1f)},
-	Vertex{glm::vec3(3.1f, -3.1f, -3.1f)},
-	Vertex{glm::vec3(3.1f, -3.1f,  3.1f)},
-	Vertex{glm::vec3(-3.1f,  3.1f,  3.1f)},
-	Vertex{glm::vec3(-3.1f,  3.1f, -3.1f)},
-	Vertex{glm::vec3(3.1f,  3.1f, -3.1f)},
-	Vertex{glm::vec3(3.1f,  3.1f,  3.1f)}
+	Vertex{glm::vec3(-0.1f, -0.1f,  0.1f)},
+	Vertex{glm::vec3(-0.1f, -0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f, -0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f, -0.1f,  0.1f)},
+	Vertex{glm::vec3(-0.1f,  0.1f,  0.1f)},
+	Vertex{glm::vec3(-0.1f,  0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f,  0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f,  0.1f,  0.1f)}
 };
 
 GLuint lightIndices[] =
@@ -121,7 +121,7 @@ int main()
 
 
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPos = glm::vec3(0.5f, 0.5f, 0.5f);
+	glm::vec3 lightPos = glm::vec3(0.0f, 0.5f, 0.5f);
 	glm::mat4 lightModel = glm::mat4(1.0f);
 	lightModel = glm::translate(lightModel, lightPos);
 
@@ -177,6 +177,15 @@ int main()
 		// Updates and exports the camera matrix to the Vertex Shader
 		camera.updateMatrix(45.0f, 1.0f, 50.0f);
 
+		// --- Add these lines to update the spotlight position and direction ---
+		shaderProgram.Activate();
+		// Set spotlight position to camera position
+		glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"),
+					camera.Position.x, camera.Position.y, camera.Position.z);
+		// Set spotlight direction to camera forward vector
+		glUniform3f(glGetUniformLocation(shaderProgram.ID, "spotDirection"),
+					camera.Orientation.x, camera.Orientation.y, camera.Orientation.z);
+		// ---------------------------------------------------------------------
 
 
 		// Draw the school model if it loaded successfully
