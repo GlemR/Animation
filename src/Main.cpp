@@ -17,8 +17,8 @@
 
 
 
-const unsigned int width = 800;
-const unsigned int height = 800;
+const unsigned int width = 1920;
+const unsigned int height = 1080;
 
 
 
@@ -40,14 +40,14 @@ GLuint indices[] =
 
 Vertex lightVertices[] =
 { //     COORDINATES     //
-	Vertex{glm::vec3(-0.1f, -0.1f,  0.1f)},
-	Vertex{glm::vec3(-0.1f, -0.1f, -0.1f)},
-	Vertex{glm::vec3(0.1f, -0.1f, -0.1f)},
-	Vertex{glm::vec3(0.1f, -0.1f,  0.1f)},
-	Vertex{glm::vec3(-0.1f,  0.1f,  0.1f)},
-	Vertex{glm::vec3(-0.1f,  0.1f, -0.1f)},
-	Vertex{glm::vec3(0.1f,  0.1f, -0.1f)},
-	Vertex{glm::vec3(0.1f,  0.1f,  0.1f)}
+	Vertex{glm::vec3(-3.1f, -3.1f,  3.1f)},
+	Vertex{glm::vec3(-3.1f, -3.1f, -3.1f)},
+	Vertex{glm::vec3(3.1f, -3.1f, -3.1f)},
+	Vertex{glm::vec3(3.1f, -3.1f,  3.1f)},
+	Vertex{glm::vec3(-3.1f,  3.1f,  3.1f)},
+	Vertex{glm::vec3(-3.1f,  3.1f, -3.1f)},
+	Vertex{glm::vec3(3.1f,  3.1f, -3.1f)},
+	Vertex{glm::vec3(3.1f,  3.1f,  3.1f)}
 };
 
 GLuint lightIndices[] =
