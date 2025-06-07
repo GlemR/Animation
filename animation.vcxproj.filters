@@ -36,6 +36,14 @@
     <None Include="src\light.vert">
       <Filter>Resource Files\Light</Filter>
     </None>
+    <None Include="model.frag" />
+    <None Include="model.vert" />
+    <None Include="src\model.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="src\model.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\shaderClass.cpp">
@@ -89,6 +97,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ModelLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

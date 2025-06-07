@@ -13,6 +13,7 @@
 #include"EBO.h"
 #include"Camera.h"
 #include"Mesh.h"
+#include"ModelLoader.h"
 
 
 
@@ -126,7 +127,15 @@ int main()
 	// Create light mesh
 	Mesh light(lightVerts, lightInd, tex);
 
-
+	Model* schoolModel = nullptr;
+	try {
+		schoolModel = new Model("models/school.obj"); // Adjust path as needed
+		std::cout << "School model loaded successfully!" << std::endl;
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Failed to load school model: " << e.what() << std::endl;
+		// Continue without the model
+	}
 
 
 
@@ -139,6 +148,10 @@ int main()
 	glm::mat4 objectModel = glm::mat4(1.0f);
 	objectModel = glm::translate(objectModel, objectPos);
 
+	// School model transformation (you might want to scale or position it differently)
+	glm::mat4 schoolModelMatrix = glm::mat4(1.0f);
+	schoolModelMatrix = glm::translate(schoolModelMatrix, glm::vec3(0.0f, 1.0f, 0.0f)); // Raise it above the floor
+	schoolModelMatrix = glm::scale(schoolModelMatrix, glm::vec3(0.1f, 0.1f, 0.1f)); // Scale down if needed
 
 	lightShader.Activate();
 	glUniformMatrix4fv(glGetUniformLocation(lightShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(lightModel));
@@ -177,6 +190,15 @@ int main()
 		floor.Draw(shaderProgram, camera);
 		light.Draw(lightShader, camera);
 
+		// Draw the school model if it loaded successfully
+		if (schoolModel != nullptr) {
+			// Update model matrix for the school
+			shaderProgram.Activate();
+			glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(schoolModelMatrix));
+
+			// Draw the school model using your existing Draw method
+			schoolModel->Draw(shaderProgram, camera);
+		}
 
 		// Swap the back buffer with the front buffer
 		glfwSwapBuffers(window);
@@ -189,6 +211,12 @@ int main()
 	// Delete all the objects we've created
 	shaderProgram.Delete();
 	lightShader.Delete();
+
+	// Delete the school model
+	if (schoolModel != nullptr) {
+		delete schoolModel;
+	}
+
 	// Delete window before ending the program
 	glfwDestroyWindow(window);
 	// Terminate GLFW before ending the program

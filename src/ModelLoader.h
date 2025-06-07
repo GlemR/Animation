@@ -7,76 +7,8 @@
 #include <vector>
 #include <string>
 #include <iostream>
-
-struct Mesh {
-    GLuint VAO = 0, VBO = 0, EBO = 0;
-    size_t indexCount = 0;
-    bool initialized = false;
-
-    // Disable copy constructor and assignment to prevent double-deletion
-    Mesh(const Mesh&) = delete;
-    Mesh& operator=(const Mesh&) = delete;
-
-    // Enable move constructor and assignment
-    Mesh() = default;
-
-    Mesh(Mesh&& other) noexcept {
-        VAO = other.VAO;
-        VBO = other.VBO;
-        EBO = other.EBO;
-        indexCount = other.indexCount;
-        initialized = other.initialized;
-
-        // Reset the moved-from object
-        other.VAO = 0;
-        other.VBO = 0;
-        other.EBO = 0;
-        other.indexCount = 0;
-        other.initialized = false;
-    }
-
-    Mesh& operator=(Mesh&& other) noexcept {
-        if (this != &other) {
-            cleanup();
-
-            VAO = other.VAO;
-            VBO = other.VBO;
-            EBO = other.EBO;
-            indexCount = other.indexCount;
-            initialized = other.initialized;
-
-            other.VAO = 0;
-            other.VBO = 0;
-            other.EBO = 0;
-            other.indexCount = 0;
-            other.initialized = false;
-        }
-        return *this;
-    }
-
-    ~Mesh() {
-        cleanup();
-    }
-
-private:
-    void cleanup() {
-        if (initialized) {
-            if (VAO != 0) {
-                glDeleteVertexArrays(1, &VAO);
-                VAO = 0;
-            }
-            if (VBO != 0) {
-                glDeleteBuffers(1, &VBO);
-                VBO = 0;
-            }
-            if (EBO != 0) {
-                glDeleteBuffers(1, &EBO);
-                EBO = 0;
-            }
-            initialized = false;
-        }
-    }
-};
+#include "Mesh.h"
+#include "Texture.h"
 
 class Model {
 public:
@@ -95,13 +27,9 @@ public:
     Model(Model&&) = default;
     Model& operator=(Model&&) = default;
 
-    void Draw() {
+    void Draw(Shader& shader, Camera& camera) {
         for (auto& mesh : meshes) {
-            if (mesh.indexCount > 0 && mesh.initialized) {
-                glBindVertexArray(mesh.VAO);
-                glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indexCount), GL_UNSIGNED_INT, 0);
-                glBindVertexArray(0);
-            }
+            mesh.Draw(shader, camera);
         }
     }
 
@@ -126,7 +54,7 @@ private:
 
         std::cout << "Model has " << scene->mNumMeshes << " meshes" << std::endl;
 
-        // Reserve space to avoid reallocations that could cause issues
+        // Reserve space to avoid reallocations
         meshes.reserve(scene->mNumMeshes);
 
         // Load ALL meshes
@@ -135,68 +63,67 @@ private:
             std::cout << "Loading mesh " << meshIndex << ": " << aiMesh->mNumVertices
                 << " vertices, " << aiMesh->mNumFaces << " faces" << std::endl;
 
-            Mesh mesh;
-            if (loadMesh(aiMesh, mesh)) {
-                meshes.emplace_back(std::move(mesh));
-            }
+            loadMesh(aiMesh);
         }
 
         std::cout << "Successfully loaded " << meshes.size() << " meshes" << std::endl;
     }
 
-    bool loadMesh(const aiMesh* aiMesh, Mesh& mesh) {
+    void loadMesh(const aiMesh* aiMesh) {
         if (!aiMesh || aiMesh->mNumVertices == 0) {
             std::cout << "  Warning: Invalid or empty mesh!" << std::endl;
-            return false;
+            return;
         }
 
-        std::vector<float> vertices;
-        std::vector<unsigned int> indices;
+        std::vector<Vertex> vertices;
+        std::vector<GLuint> indices;
+        std::vector<Texture> textures; // Empty for now, you can add texture loading later
 
         // Reserve space for better performance
-        vertices.reserve(aiMesh->mNumVertices * 8); // 8 floats per vertex
+        vertices.reserve(aiMesh->mNumVertices);
 
         // Track bounding box for this mesh
         float minX = FLT_MAX, maxX = -FLT_MAX;
         float minY = FLT_MAX, maxY = -FLT_MAX;
         float minZ = FLT_MAX, maxZ = -FLT_MAX;
 
+        // Load vertices
         for (unsigned int i = 0; i < aiMesh->mNumVertices; ++i) {
-            // Position
-            float x = aiMesh->mVertices[i].x;
-            float y = aiMesh->mVertices[i].y;
-            float z = aiMesh->mVertices[i].z;
+            Vertex vertex;
 
-            vertices.push_back(x);
-            vertices.push_back(y);
-            vertices.push_back(z);
+            // Position
+            vertex.position.x = aiMesh->mVertices[i].x;
+            vertex.position.y = aiMesh->mVertices[i].y;
+            vertex.position.z = aiMesh->mVertices[i].z;
 
             // Update bounding box
-            minX = std::min(minX, x); maxX = std::max(maxX, x);
-            minY = std::min(minY, y); maxY = std::max(maxY, y);
-            minZ = std::min(minZ, z); maxZ = std::max(maxZ, z);
+            minX = std::min(minX, vertex.position.x); maxX = std::max(maxX, vertex.position.x);
+            minY = std::min(minY, vertex.position.y); maxY = std::max(maxY, vertex.position.y);
+            minZ = std::min(minZ, vertex.position.z); maxZ = std::max(maxZ, vertex.position.z);
 
             // Normal
             if (aiMesh->HasNormals()) {
-                vertices.push_back(aiMesh->mNormals[i].x);
-                vertices.push_back(aiMesh->mNormals[i].y);
-                vertices.push_back(aiMesh->mNormals[i].z);
+                vertex.normal.x = aiMesh->mNormals[i].x;
+                vertex.normal.y = aiMesh->mNormals[i].y;
+                vertex.normal.z = aiMesh->mNormals[i].z;
             }
             else {
-                vertices.push_back(0.0f);
-                vertices.push_back(0.0f);
-                vertices.push_back(1.0f);
+                vertex.normal = glm::vec3(0.0f, 0.0f, 1.0f);
             }
 
-            // TexCoords
+            // Color (set to white by default)
+            vertex.color = glm::vec3(1.0f, 1.0f, 1.0f);
+
+            // Texture coordinates
             if (aiMesh->HasTextureCoords(0)) {
-                vertices.push_back(aiMesh->mTextureCoords[0][i].x);
-                vertices.push_back(aiMesh->mTextureCoords[0][i].y);
+                vertex.texUV.x = aiMesh->mTextureCoords[0][i].x;
+                vertex.texUV.y = aiMesh->mTextureCoords[0][i].y;
             }
             else {
-                vertices.push_back(0.0f);
-                vertices.push_back(0.0f);
+                vertex.texUV = glm::vec2(0.0f, 0.0f);
             }
+
+            vertices.push_back(vertex);
         }
 
         // Print bounding box for this mesh
@@ -214,56 +141,16 @@ private:
             }
         }
 
-        mesh.indexCount = indices.size();
-
-        if (mesh.indexCount == 0) {
+        if (indices.empty()) {
             std::cout << "  Warning: Mesh has no valid triangular faces!" << std::endl;
-            return false;
+            return;
         }
 
-        // Generate OpenGL objects
-        glGenVertexArrays(1, &mesh.VAO);
-        glGenBuffers(1, &mesh.VBO);
-        glGenBuffers(1, &mesh.EBO);
+        // Create the mesh using your existing Mesh class
+        meshes.emplace_back(vertices, indices, textures);
 
-        if (mesh.VAO == 0 || mesh.VBO == 0 || mesh.EBO == 0) {
-            std::cerr << "  Error: Failed to generate OpenGL objects!" << std::endl;
-            return false;
-        }
-
-        glBindVertexArray(mesh.VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-        // layout: pos (3), normal (3), tex (2) = 8 floats per vertex
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-        glEnableVertexAttribArray(2);
-
-        glBindVertexArray(0);
-
-        // Check for OpenGL errors
-        GLenum error = glGetError();
-        if (error != GL_NO_ERROR) {
-            std::cerr << "  OpenGL Error during mesh setup: " << error << std::endl;
-            return false;
-        }
-
-        mesh.initialized = true;
-
-        std::cout << "  Mesh loaded successfully: " << vertices.size() / 8 << " vertices, "
-            << mesh.indexCount << " indices" << std::endl;
-
-        return true;
+        std::cout << "  Mesh loaded successfully: " << vertices.size() << " vertices, "
+            << indices.size() << " indices" << std::endl;
     }
 };
 #endif
