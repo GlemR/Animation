@@ -133,6 +133,7 @@ void Camera::Inputs(GLFWwindow* window, const std::vector<Mesh>& meshes, const g
 	{
 		speed = 0.1f;
 	}
+	
 	float radius = 0.2f;
 	bool collision = false;
 	if (enableCollision) {
@@ -143,6 +144,8 @@ void Camera::Inputs(GLFWwindow* window, const std::vector<Mesh>& meshes, const g
 			}
 		}
 	}
+	// Hard-code the camera's Y position
+	nextPosition.y = 2.5f;
 	if (!collision) {
 		Position = nextPosition;
 	}
