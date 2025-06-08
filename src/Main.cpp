@@ -20,7 +20,9 @@
 
 const unsigned int width = 1920;
 const unsigned int height = 1080;
-
+bool enableCollision = true;
+bool showAABBs = false;
+float fov = 70.0f; // Field of view for the camera
 
 
 // Vertices coordinates
@@ -119,12 +121,6 @@ int main()
 		// Continue without the model
 	}
 
-	std::vector<AABB> sceneAABBs;
-	if (schoolModel != nullptr) {
-		for (const auto& mesh : schoolModel->meshes) {
-			sceneAABBs.push_back(mesh.boundingBox);
-		}
-	}
 
 
 
@@ -150,15 +146,11 @@ int main()
 	schoolModelMatrix = glm::translate(schoolModelMatrix, glm::vec3(0.0f, 1.0f, 0.0f)); // Raise it above the floor
 	glm::vec3 scaleVec(2.0f, 2.0f, 2.0f);
 	schoolModelMatrix = glm::scale(schoolModelMatrix, scaleVec);
-	if (schoolModel != nullptr) {
-		for (auto& mesh : schoolModel->meshes) {
-			mesh.boundingBox.min *= scaleVec;
-			mesh.boundingBox.max *= scaleVec;
-			mesh.position = 0.5f * (mesh.boundingBox.min + mesh.boundingBox.max);
-		}
+
+	// Compute world triangles for each mesh in the school model
+	for (auto& mesh : schoolModel->meshes) {
+		mesh.ComputeWorldTriangles(schoolModelMatrix);
 	}
-
-
 
 	// Enables the Depth Buffer
 	glEnable(GL_DEPTH_TEST);
@@ -176,6 +168,10 @@ int main()
 	// Creates camera object
 	Camera camera(width, height, glm::vec3(2.8f, 2.8f, -3.44f));
 
+	static bool prevF1 = false, prevF2 = false;
+
+	Shader aabbShader("src/aabb.vert", "src/aabb.frag");
+
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -184,13 +180,19 @@ int main()
 		// Clean the back buffer and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-
-		std::cout << camera.colis << std::endl;
+		if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+		{
+			fov += 0.5f; // Increase FOV
+		}
+		if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+		{
+			fov -= 0.5f; // Increase FOV
+		}
+		std::cout << "FOV: " << fov << std::endl;
 		// Handles camera inputs
-		camera.Inputs(window, schoolModel->meshes);
+		camera.Inputs(window, schoolModel->meshes, schoolModelMatrix, enableCollision);
 		// Updates and exports the camera matrix to the Vertex Shader
-		camera.updateMatrix(60.0f, 1.0f, 50.0f);
+		camera.updateMatrix(fov, 0.1f, 50.0f);
 
 		// --- Add these lines to update the spotlight position and direction ---
 		shaderProgram.Activate();
@@ -201,6 +203,14 @@ int main()
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "spotDirection"),
 					camera.Orientation.x, camera.Orientation.y, camera.Orientation.z);
 		// ---------------------------------------------------------------------
+
+		// Handle toggling of collision and AABB visibility
+		bool currF1 = glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS;
+		bool currF2 = glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS;
+		if (currF1 && !prevF1) enableCollision = !enableCollision;
+		if (currF2 && !prevF2) showAABBs = !showAABBs;
+		prevF1 = currF1; prevF2 = currF2;
+
 
 
 		// Draw the school model if it loaded successfully
@@ -213,6 +223,12 @@ int main()
 			schoolModel->Draw(shaderProgram, camera);
 		}
 
+		if (showAABBs) {
+			for (auto& mesh : schoolModel->meshes) {
+				mesh.DrawAABB(schoolModelMatrix, aabbShader, camera);
+			}
+		}
+
 		// Swap the back buffer with the front buffer
 		glfwSwapBuffers(window);
 		// Take care of all GLFW events
@@ -223,6 +239,7 @@ int main()
 
 	// Delete all the objects we've created
 	shaderProgram.Delete();
+	aabbShader.Delete();
 
 	// Delete the school model
 	if (schoolModel != nullptr) {

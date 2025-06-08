@@ -168,9 +168,6 @@ private:
 
         // Create the mesh using your existing Mesh class
         Mesh mesh(vertices, indices, textures);
-        mesh.boundingBox.min = glm::vec3(minX, minY, minZ);
-        mesh.boundingBox.max = glm::vec3(maxX, maxY, maxZ);
-        mesh.position = 0.5f * (mesh.boundingBox.min + mesh.boundingBox.max);
         meshes.emplace_back(std::move(mesh));
     }
 

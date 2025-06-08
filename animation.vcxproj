@@ -23,6 +23,8 @@
     <None Include="model.vert" />
     <None Include="models\MapSchool.fbx" />
     <None Include="models\SecondSchool.fbx" />
+    <None Include="src\aabb.frag" />
+    <None Include="src\aabb.vert" />
     <None Include="src\default.frag" />
     <None Include="src\default.vert" />
     <None Include="src\light.frag" />
@@ -31,6 +33,7 @@
     <None Include="src\model.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\AABB.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\EBO.cpp" />
     <ClCompile Include="src\glad.c" />

@@ -41,6 +41,6 @@ public:
 	// Exports the camera matrix to a shader
 	void Matrix(Shader& shader, const char* uniform);
 	// Handles camera inputs
-	void Inputs(GLFWwindow* window, const std::vector<Mesh>& meshes);
+	void Inputs(GLFWwindow* window, const std::vector<Mesh>& meshes, const glm::mat4& modelMatrix, bool enableCollision);
 };
 #endif
