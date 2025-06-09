@@ -32,7 +32,7 @@ void main()
 	// calculates current position
 	crntPos = vec3(model * vec4(aPos, 1.0f));
 	// Assigns the normal from the Vertex Data to "Normal"
-	Normal = aNormal;
+	Normal = mat3(transpose(inverse(model))) * aNormal;
 	// Assigns the colors from the Vertex Data to "color"
 	color = aColor;
 	// Assigns the texture coordinates from the Vertex Data to "texCoord"
