@@ -114,7 +114,7 @@ int main()
 
 	Model* schoolModel = nullptr;
 	try {
-		schoolModel = new Model("models/MapSchool.fbx"); // Adjust path as needed
+		schoolModel = new Model("models/MapSchool.fbx");
 		std::cout << "School model loaded successfully!" << std::endl;
 	}
 	catch (const std::exception& e) {
@@ -122,7 +122,15 @@ int main()
 		// Continue without the model
 	}
 
-
+	Model* nathanModel = nullptr;
+	try {
+		nathanModel = new Model("models/nathan.fbx");
+		std::cout << "Nathan model loaded successfully!" << std::endl;
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Failed to load nathan model: " << e.what() << std::endl;
+		// Continue without the model
+	}
 
 
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -137,7 +145,6 @@ int main()
 	lightModel = glm::translate(lightModel, lightPos);
 	lightModel2 = glm::translate(lightModel2, lightPos2);
 
-	// Add this after lightPos2
 
 	
 
@@ -155,11 +162,15 @@ int main()
 	glUniform1i(glGetUniformLocation(shaderProgram.ID, "normal0"), 2);
 
 
-	// School model transformation (you might want to scale or position it differently)
+	// School model transformation
 	glm::mat4 schoolModelMatrix = glm::mat4(1.0f);
-	schoolModelMatrix = glm::translate(schoolModelMatrix, glm::vec3(0.0f, 1.0f, 0.0f)); // Raise it above the floor
+	schoolModelMatrix = glm::translate(schoolModelMatrix, glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::vec3 scaleVec(2.0f, 2.0f, 2.0f);
 	schoolModelMatrix = glm::scale(schoolModelMatrix, scaleVec);
+
+	glm::mat4 nathanModelMatrix = glm::mat4(1.0f);
+	nathanModelMatrix = glm::translate(nathanModelMatrix, glm::vec3(29.6f, 1.0f, -45.8f));
+	nathanModelMatrix = glm::scale(nathanModelMatrix, glm::vec3(0.0088f, 0.0088f, 0.0088f));
 
 	// Compute world triangles for each mesh in the school model
 	for (auto& mesh : schoolModel->meshes) {
@@ -168,8 +179,8 @@ int main()
 
 	// Enables the Depth Buffer
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);        // Add this
-	glDepthMask(GL_TRUE);        // Add this
+	glDepthFunc(GL_LESS);
+	glDepthMask(GL_TRUE);
 
 	//POLYGON OFFSET TO REDUCE Z - FIGHTING
 	glEnable(GL_POLYGON_OFFSET_FILL);
@@ -243,6 +254,16 @@ int main()
 			schoolModel->Draw(shaderProgram, camera);
 		}
 
+		// Draw the nathan model if it loaded successfully
+		if (nathanModel != nullptr) {
+			// Update model matrix for nathan
+			shaderProgram.Activate();
+			glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(nathanModelMatrix));
+
+			// Draw the school model using your existing Draw method
+			nathanModel->Draw(shaderProgram, camera);
+		}
+
 		if (showAABBs) {
 			for (auto& mesh : schoolModel->meshes) {
 				mesh.DrawAABB(schoolModelMatrix, aabbShader, camera);
@@ -264,6 +285,11 @@ int main()
 	// Delete the school model
 	if (schoolModel != nullptr) {
 		delete schoolModel;
+	}
+
+	// Delete nathan model
+	if (nathanModel != nullptr) {
+		delete nathanModel;
 	}
 
 	// Delete window before ending the program

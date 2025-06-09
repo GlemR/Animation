@@ -184,6 +184,7 @@ private:
 
             std::vector<std::string> possiblePaths = {
                 "textures/MapSchool/" + filename,
+                "textures/Nat/" + filename,
             };
 
             std::string fullPath;
