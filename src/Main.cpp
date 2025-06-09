@@ -25,6 +25,13 @@ bool showAABBs = false;
 bool fleshlight = true; // Toggle for fleshlight effect
 float fov = 70.0f; // Field of view for the camera
 
+// Nathan animation variables
+float nathanWalkSpeed = 2.0f; // Units per second
+glm::vec3 nathanStartPos = glm::vec3(3.6f, 1.0f, -45.8f);
+glm::vec3 nathanEndPos = glm::vec3(29.6f, 1.0f, -45.8f);
+glm::vec3 nathanCurrentPos = nathanStartPos;
+bool nathanMovingToEnd = true; // true = moving to end position, false = moving to start
+float nathanLastTime = 0.0f;
 
 // Vertices coordinates
 Vertex vertices[] =
@@ -70,6 +77,34 @@ GLuint lightIndices[] =
 	4, 6, 7
 };
 
+// Function to update Nathan's position
+void updateNathanPosition(float currentTime) {
+	float deltaTime = currentTime - nathanLastTime;
+	nathanLastTime = currentTime;
+
+	if (nathanMovingToEnd) {
+		// Move towards end position
+		glm::vec3 direction = glm::normalize(nathanEndPos - nathanCurrentPos);
+		nathanCurrentPos += direction * nathanWalkSpeed * deltaTime;
+
+		// Check if we've reached or passed the end position
+		if (glm::distance(nathanCurrentPos, nathanEndPos) < 0.1f) {
+			nathanCurrentPos = nathanEndPos;
+			nathanMovingToEnd = false;
+		}
+	}
+	else {
+		// Move towards start position
+		glm::vec3 direction = glm::normalize(nathanStartPos - nathanCurrentPos);
+		nathanCurrentPos += direction * nathanWalkSpeed * deltaTime;
+
+		// Check if we've reached or passed the start position
+		if (glm::distance(nathanCurrentPos, nathanStartPos) < 0.1f) {
+			nathanCurrentPos = nathanStartPos;
+			nathanMovingToEnd = true;
+		}
+	}
+}
 
 int main()
 {
@@ -168,9 +203,8 @@ int main()
 	glm::vec3 scaleVec(2.0f, 2.0f, 2.0f);
 	schoolModelMatrix = glm::scale(schoolModelMatrix, scaleVec);
 
-	glm::mat4 nathanModelMatrix = glm::mat4(1.0f);
-	nathanModelMatrix = glm::translate(nathanModelMatrix, glm::vec3(29.6f, 1.0f, -45.8f));
-	nathanModelMatrix = glm::scale(nathanModelMatrix, glm::vec3(0.0088f, 0.0088f, 0.0088f));
+	// Initialize Nathan's starting time
+	nathanLastTime = static_cast<float>(glfwGetTime());
 
 	// Compute world triangles for each mesh in the school model
 	for (auto& mesh : schoolModel->meshes) {
@@ -203,6 +237,11 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
 
+		// Get current time for animation
+		float currentTime = static_cast<float>(glfwGetTime());
+
+		// Update Nathan's position
+		updateNathanPosition(currentTime);
 
 		// Specify the color of the background
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
@@ -256,6 +295,21 @@ int main()
 
 		// Draw the nathan model if it loaded successfully
 		if (nathanModel != nullptr) {
+			// Create Nathan's model matrix with updated position
+			glm::mat4 nathanModelMatrix = glm::mat4(1.0f);
+			nathanModelMatrix = glm::translate(nathanModelMatrix, nathanCurrentPos);
+			nathanModelMatrix = glm::scale(nathanModelMatrix, glm::vec3(0.0088f, 0.0088f, 0.0088f));
+
+			// Rotate Nathan to face the direction he's walking
+			if (nathanMovingToEnd) {
+				// Walking towards positive X, face that direction (0 degrees)
+				nathanModelMatrix = glm::rotate(nathanModelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			}
+			else {
+				// Walking towards negative X, face that direction (180 degrees)
+				nathanModelMatrix = glm::rotate(nathanModelMatrix, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+			}
+
 			// Update model matrix for nathan
 			shaderProgram.Activate();
 			glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(nathanModelMatrix));
