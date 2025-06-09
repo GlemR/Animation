@@ -27,6 +27,8 @@
     <None Include="src\aabb.vert" />
     <None Include="src\default.frag" />
     <None Include="src\default.vert" />
+    <None Include="src\lamp.frag" />
+    <None Include="src\lamp.vert" />
     <None Include="src\light.frag" />
     <None Include="src\light.vert" />
     <None Include="src\model.frag" />

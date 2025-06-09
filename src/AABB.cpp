@@ -19,5 +19,5 @@ AABB transformAABB(const AABB& box, const glm::mat4& modelMatrix) {
         newMin = glm::min(newMin, transformed);
         newMax = glm::max(newMax, transformed);
     }
-    return { newMin, newMax };
+    return {newMin, newMax};
 }

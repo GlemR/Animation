@@ -22,6 +22,7 @@ const unsigned int width = 1920;
 const unsigned int height = 1080;
 bool enableCollision = true;
 bool showAABBs = false;
+bool fleshlight = true; // Toggle for fleshlight effect
 float fov = 70.0f; // Field of view for the camera
 
 
@@ -125,14 +126,27 @@ int main()
 
 
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	glm::vec4 lightColor2 = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
 	glm::vec3 lightPos = glm::vec3(0.0f, 0.5f, 0.5f);
+	glm::vec3 lightPos2 = glm::vec3(-1.615f, 3.0f, 2.894f);
 	glm::mat4 lightModel = glm::mat4(1.0f);
+	glm::mat4 lightModel2 = glm::mat4(1.0f);
+	glm::vec3 spotDirection2 = glm::vec3(0.0f, 1.0f, 0.0f); // Example: pointing up
+	glm::vec3 lampPos = glm::vec3(-1.615f, 4.4f, 2.894f); // Example position inside your L-shaped room
+	glUniform3f(glGetUniformLocation(shaderProgram.ID, "lampPos"), lampPos.x, lampPos.y, lampPos.z);
 	lightModel = glm::translate(lightModel, lightPos);
+	lightModel2 = glm::translate(lightModel2, lightPos2);
 
+	// Add this after lightPos2
+
+	
 
 	shaderProgram.Activate();
 	glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
 	glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+	glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor2"), lightColor2.x, lightColor2.y, lightColor2.z, lightColor2.w);
+	glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos2"), lightPos2.x, lightPos2.y, lightPos2.z);
+	glUniform3f(glGetUniformLocation(shaderProgram.ID, "spotDirection2"), spotDirection2.x, spotDirection2.y, spotDirection2.z);
 
 	// Set up texture uniforms in the shader
 	// This tells the shader which texture units to use for each texture type
@@ -165,16 +179,20 @@ int main()
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 
-	// Creates camera object
-	Camera camera(width, height, glm::vec3(2.8f, 2.8f, -3.44f));
 
-	static bool prevF1 = false, prevF2 = false;
+	// Creates camera object
+	Camera camera(width, height, glm::vec3(6.62f, 2.5f, 4.19f));
+
+	static bool prevF1 = false, prevF2 = false, prevF = false;;
 
 	Shader aabbShader("src/aabb.vert", "src/aabb.frag");
+
 
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
 	{
+
+
 		// Specify the color of the background
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
 		// Clean the back buffer and depth buffer
@@ -188,13 +206,11 @@ int main()
 		{
 			fov -= 0.5f; // Increase FOV
 		}
-		std::cout << "FOV: " << fov << std::endl;
 		// Handles camera inputs
 		camera.Inputs(window, schoolModel->meshes, schoolModelMatrix, enableCollision);
 		// Updates and exports the camera matrix to the Vertex Shader
 		camera.updateMatrix(fov, 0.1f, 50.0f);
 
-		// --- Add these lines to update the spotlight position and direction ---
 		shaderProgram.Activate();
 		// Set spotlight position to camera position
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"),
@@ -203,16 +219,20 @@ int main()
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "spotDirection"),
 					camera.Orientation.x, camera.Orientation.y, camera.Orientation.z);
 		// ---------------------------------------------------------------------
-
+		float timeValue = static_cast<float>(glfwGetTime());
+		glUniform1f(glGetUniformLocation(shaderProgram.ID, "time"), timeValue);
 		// Handle toggling of collision and AABB visibility
+
 		bool currF1 = glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS;
 		bool currF2 = glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS;
+		bool currF = glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS;
 		if (currF1 && !prevF1) enableCollision = !enableCollision;
 		if (currF2 && !prevF2) showAABBs = !showAABBs;
-		prevF1 = currF1; prevF2 = currF2;
+		if (currF && !prevF) fleshlight = !fleshlight;
+		prevF1 = currF1; prevF2 = currF2; prevF = currF;
+		glUniform1i(glGetUniformLocation(shaderProgram.ID, "isOn"), fleshlight ? 1 : 0);
 
-
-
+		std::cout << camera.Position.x << " " << camera.Position.y << " " << camera.Position.z << std::endl;
 		// Draw the school model if it loaded successfully
 		if (schoolModel != nullptr) {
 			// Update model matrix for the school

@@ -44,6 +44,16 @@
     <None Include="src\model.vert">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="models\MapSchool.fbx" />
+    <None Include="models\SecondSchool.fbx" />
+    <None Include="src\aabb.frag" />
+    <None Include="src\aabb.vert" />
+    <None Include="src\lamp.vert">
+      <Filter>Resource Files\Light</Filter>
+    </None>
+    <None Include="src\lamp.frag">
+      <Filter>Resource Files\Light</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\shaderClass.cpp">
@@ -76,6 +86,9 @@
     <ClCompile Include="src\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\AABB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VAO.h">
@@ -100,6 +113,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ModelLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AABB.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
