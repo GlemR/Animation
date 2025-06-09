@@ -286,7 +286,6 @@ int main()
 		// Draw the school model if it loaded successfully
 		if (schoolModel != nullptr) {
 			// Update model matrix for the school
-			shaderProgram.Activate();
 			glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(schoolModelMatrix));
 
 			// Draw the school model using your existing Draw method
@@ -302,16 +301,15 @@ int main()
 
 			// Rotate Nathan to face the direction he's walking
 			if (nathanMovingToEnd) {
-				// Walking towards positive X, face that direction (0 degrees)
+				// Face walking direction (90 degrees)
 				nathanModelMatrix = glm::rotate(nathanModelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			}
 			else {
-				// Walking towards negative X, face that direction (180 degrees)
+				// Face walking direction (270 degrees)
 				nathanModelMatrix = glm::rotate(nathanModelMatrix, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			}
 
 			// Update model matrix for nathan
-			shaderProgram.Activate();
 			glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(nathanModelMatrix));
 
 			// Draw the school model using your existing Draw method
